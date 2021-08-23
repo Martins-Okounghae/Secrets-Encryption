@@ -48,7 +48,8 @@ mongoose.connect("mongodb://localhost:27017/userDB", {useNewUrlParser: true});
 const userSchema =  new mongoose.Schema({
   email:String,
   password:String,
-  googleId: String
+  googleId: String,
+  secret:String
 });
 
 
@@ -117,11 +118,16 @@ app.get("/register", function(req, res){
 });
 
 app.get("/secrets", function(req, res){
-  if(req.isAuthenticated()){
-    res.render("secrets");
+User.find({"secret":{$ne:null}}, function(err, foundUsers){
+  if(err){
+    console.log(err);
   }else{
-    res.redirect("/login");
+    if(foundUsers){
+      res.render("secrets", {usersWithSecrets:foundUsers})
+    }
   }
+});
+
 });
 
 
@@ -132,7 +138,7 @@ app.get("/secrets", function(req, res){
    }else{
      res.redirect("/login");
    }
-   
+
  });
 
 
@@ -162,6 +168,34 @@ app.get("/secrets", function(req, res){
 // });
 //
 // });
+
+
+app.post("/submit", function(req, res){
+  const sumbmittedSecret = req.body.secret;
+   //passport save the current user using the code below
+    //req.user
+  console.log(req.user.id);
+
+  User.findById(req.user.id, function(err, foundUser){
+    if(err){
+      console.log(err);
+    }else{
+      if(foundUser){
+        foundUser.secret = sumbmittedSecret;
+        foundUser.save(function(){
+          res.redirect("/secrets");
+        });
+      }
+    }
+  });
+
+
+
+
+});
+
+
+
 
 app.post("/register", function(req, res){
   User.register({username:req.body.username}, req.body.password, function(err, user){
